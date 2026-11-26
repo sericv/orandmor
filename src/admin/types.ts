@@ -1,4 +1,9 @@
-export type AdminSection = 'overview' | 'products' | 'categories' | 'prices';
+export type AdminSection =
+  | 'overview'
+  | 'products'
+  | 'categories'
+  | 'prices'
+  | 'guide';
 
 export interface AdminCategory {
   id: string;

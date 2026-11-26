@@ -180,7 +180,7 @@
   pointer-events: none;
 }
 
-/* Bottom sheet motion */
+/* Bottom sheet motion — full slide-up / slide-down synced with backdrop */
 @keyframes backdropIn {
   from {
     opacity: 0;
@@ -190,35 +190,80 @@
   }
 }
 
+@keyframes backdropOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 @keyframes sheetSlideUp {
   from {
-    opacity: 0;
-    transform: translateY(24px) scale(0.98);
+    opacity: 0.4;
+    transform: translate3d(0, 100%, 0);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes sheetSlideDown {
+  from {
+    opacity: 1;
+    transform: translate3d(0, var(--sheet-drag-y, 0px), 0);
+  }
+  to {
+    opacity: 0.4;
+    transform: translate3d(0, 100%, 0);
   }
 }
 
 .sheet-backdrop {
-  animation: backdropIn 180ms ease-out both;
+  animation: backdropIn 280ms cubic-bezier(0.32, 0.72, 0, 1) both;
 }
 
 .sheet-backdrop-exit {
-  opacity: 0;
-  transition: opacity 180ms ease-out;
+  animation: backdropOut 280ms ease-in-out forwards;
   pointer-events: none;
 }
 
 .sheet-panel {
-  animation: sheetSlideUp 260ms var(--ease-sheet) both;
+  animation: sheetSlideUp 300ms cubic-bezier(0.32, 0.72, 0, 1) both;
 }
 
 .sheet-panel-exit {
-  opacity: 0;
-  transform: translateY(20px) scale(0.98);
-  transition: opacity 180ms var(--ease-sheet), transform 180ms var(--ease-sheet);
+  animation: sheetSlideDown 280ms ease-in-out forwards;
+  pointer-events: none;
+}
+
+/* RTL side drawer slide-in / slide-out */
+@keyframes drawerSlideInRight {
+  from {
+    transform: translate3d(100%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes drawerSlideOutRight {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(100%, 0, 0);
+  }
+}
+
+.drawer-panel {
+  animation: drawerSlideInRight 300ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.drawer-panel-exit {
+  animation: drawerSlideOutRight 280ms ease-in-out forwards;
   pointer-events: none;
 }
 
@@ -234,12 +279,14 @@
   .content-fade-in,
   .details-overlay-enter,
   .sheet-backdrop,
-  .sheet-panel {
+  .sheet-backdrop-exit,
+  .sheet-panel,
+  .sheet-panel-exit,
+  .drawer-panel,
+  .drawer-panel-exit {
     animation: none;
   }
-  .details-overlay-exit,
-  .sheet-backdrop-exit,
-  .sheet-panel-exit {
+  .details-overlay-exit {
     transition: none;
     transform: none;
   }

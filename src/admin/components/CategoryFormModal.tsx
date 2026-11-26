@@ -1,6 +1,7 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { ImagePlus, Trash2, X } from 'lucide-react';
 import { fileToCompressedDataUri } from '../../utils/imageToDataUri';
+import { useAnimatedOverlay } from '../hooks/useAnimatedOverlay';
 import type { AdminCategory, CategoryFormValues } from '../types';
 
 interface CategoryFormModalProps {
@@ -47,6 +48,7 @@ export function CategoryFormModal({
   );
   const [imageProcessing, setImageProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { rendered, closing } = useAnimatedOverlay(open);
 
   useEffect(() => {
     if (open) {
@@ -56,15 +58,15 @@ export function CategoryFormModal({
   }, [open, category, defaultSortOrder]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!rendered) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !saving) onClose();
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [open, saving, onClose]);
+  }, [rendered, saving, onClose]);
 
-  if (!open) return null;
+  if (!rendered) return null;
 
   const handleImageChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -113,10 +115,19 @@ export function CategoryFormModal({
         aria-label="إغلاق"
         disabled={saving}
         onClick={onClose}
-        className="sheet-backdrop fixed inset-0 bg-[#2B1F19]/45 backdrop-blur-[2px]"
+        onTouchMove={(e) => e.preventDefault()}
+        className={[
+          'fixed inset-0 bg-[#2B1F19]/45 backdrop-blur-[2px] touch-none overscroll-none',
+          closing ? 'sheet-backdrop-exit' : 'sheet-backdrop',
+        ].join(' ')}
       />
 
-      <div className="sheet-panel relative z-10 flex max-h-[90dvh] w-full max-w-[460px] flex-col rounded-t-[26px] sm:rounded-[24px] bg-[var(--bg-surface)] shadow-2xl border-t sm:border border-[var(--border-subtle)]">
+      <div
+        className={[
+          'relative z-10 flex max-h-[90dvh] w-full max-w-[460px] flex-col rounded-t-[26px] sm:rounded-[24px] bg-[var(--bg-surface)] shadow-2xl border-t sm:border border-[var(--border-subtle)] overscroll-contain',
+          closing ? 'sheet-panel-exit' : 'sheet-panel',
+        ].join(' ')}
+      >
         <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 py-4">
           <h2
             id="category-modal-title"

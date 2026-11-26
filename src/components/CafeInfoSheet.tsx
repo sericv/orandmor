@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Clock, ExternalLink, Phone, ShoppingBag, X } from 'lucide-react';
 import {
   CAFE_CONTACT,
@@ -13,7 +13,9 @@ interface CafeInfoSheetProps {
   onClose: () => void;
 }
 
-const SHEET_EXIT_MS = 190;
+const SHEET_EXIT_MS = 290;
+const DISMISS_DISTANCE_PX = 84;
+const DISMISS_VELOCITY_PX_MS = 0.35;
 
 export function CafeInfoSheet({
   open,
@@ -22,11 +24,19 @@ export function CafeInfoSheet({
 }: CafeInfoSheetProps) {
   const [rendered, setRendered] = useState(open);
   const [closing, setClosing] = useState(false);
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const touchStartYRef = useRef<number | null>(null);
+  const touchStartTimeRef = useRef<number>(0);
 
   useEffect(() => {
     if (open) {
       setRendered(true);
       setClosing(false);
+      setDragY(0);
+      setIsDragging(false);
       return;
     }
 
@@ -39,13 +49,16 @@ export function CafeInfoSheet({
     if (prefersReducedMotion) {
       setRendered(false);
       setClosing(false);
+      setDragY(0);
       return;
     }
 
+    setIsDragging(false);
     setClosing(true);
     const timer = window.setTimeout(() => {
       setRendered(false);
       setClosing(false);
+      setDragY(0);
     }, SHEET_EXIT_MS);
 
     return () => window.clearTimeout(timer);
@@ -60,41 +73,139 @@ export function CafeInfoSheet({
       }
     };
 
+    // Bulletproof iOS Safari + Android Chrome body scroll lock (preserves exact scrollY)
+    const scrollY = window.scrollY;
+    const html = document.documentElement;
+    const body = document.body;
+
+    const prevHtmlOverflow = html.style.overflow;
+    const prevHtmlOverscroll = html.style.overscrollBehavior;
+    const prevBodyOverflow = body.style.overflow;
+    const prevBodyPosition = body.style.position;
+    const prevBodyTop = body.style.top;
+    const prevBodyLeft = body.style.left;
+    const prevBodyRight = body.style.right;
+    const prevBodyWidth = body.style.width;
+
+    html.style.overflow = 'hidden';
+    html.style.overscrollBehavior = 'none';
+    body.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.left = '0';
+    body.style.right = '0';
+    body.style.width = '100%';
+
     document.addEventListener('keydown', handleKeyDown);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = previousOverflow;
+      html.style.overflow = prevHtmlOverflow;
+      html.style.overscrollBehavior = prevHtmlOverscroll;
+      body.style.overflow = prevBodyOverflow;
+      body.style.position = prevBodyPosition;
+      body.style.top = prevBodyTop;
+      body.style.left = prevBodyLeft;
+      body.style.right = prevBodyRight;
+      body.style.width = prevBodyWidth;
+      window.scrollTo({ top: scrollY, behavior: 'instant' });
     };
   }, [rendered, onClose]);
 
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (closing || e.touches.length !== 1) return;
+    const panel = panelRef.current;
+    // Allow drag-to-dismiss only when scrolled to the top of the sheet
+    if (panel && panel.scrollTop > 0) {
+      touchStartYRef.current = null;
+      return;
+    }
+    touchStartYRef.current = e.touches[0].clientY;
+    touchStartTimeRef.current = Date.now();
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (touchStartYRef.current === null || closing) return;
+    const currentY = e.touches[0].clientY;
+    const delta = currentY - touchStartYRef.current;
+
+    if (delta > 0) {
+      setIsDragging(true);
+      setDragY(delta);
+    } else if (isDragging) {
+      setDragY(0);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartYRef.current === null) return;
+    const elapsed = Math.max(1, Date.now() - touchStartTimeRef.current);
+    const velocity = dragY / elapsed;
+
+    touchStartYRef.current = null;
+
+    if (dragY >= DISMISS_DISTANCE_PX || (dragY > 24 && velocity >= DISMISS_VELOCITY_PX_MS)) {
+      onClose();
+    } else {
+      setIsDragging(false);
+      setDragY(0);
+    }
+  };
+
   if (!rendered) return null;
+
+  const panelStyle: CSSProperties = isDragging
+    ? {
+        transform: `translate3d(0, ${dragY}px, 0)`,
+        transition: 'none',
+      }
+    : closing
+      ? ({ '--sheet-drag-y': `${dragY}px` } as CSSProperties)
+      : {};
+
+  const backdropStyle: CSSProperties | undefined =
+    isDragging && dragY > 0
+      ? {
+          opacity: Math.max(0.15, 1 - dragY / 320),
+          transition: 'none',
+        }
+      : undefined;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4 overscroll-none"
       role="dialog"
       aria-modal="true"
       aria-labelledby="cafe-info-title"
     >
-      {/* Backdrop */}
+      {/* Backdrop — touch-none blocks drag/scroll chaining outside the sheet */}
       <button
         type="button"
         aria-label="إغلاق نافذة معلومات المقهى"
         onClick={onClose}
+        onTouchMove={(e) => e.preventDefault()}
+        style={backdropStyle}
         className={[
-          'fixed inset-0 bg-[#2B1F19]/42 backdrop-blur-[2px]',
+          'fixed inset-0 bg-[#2B1F19]/42 backdrop-blur-[2px] touch-none overscroll-none',
           closing ? 'sheet-backdrop-exit' : 'sheet-backdrop',
         ].join(' ')}
       />
 
-      {/* Bottom Sheet Panel */}
+      {/* Bottom Sheet Panel — scroll contained strictly inside the sheet */}
       <div
+        ref={panelRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+        style={panelStyle}
         className={[
-          'relative z-10 max-h-[88dvh] w-full max-w-[460px] overflow-y-auto rounded-t-[26px] sm:rounded-[26px] bg-[var(--bg-surface)] px-5 pt-3 pb-safe sm:pb-5 shadow-2xl border-t sm:border border-[var(--border-subtle)]',
-          closing ? 'sheet-panel-exit' : 'sheet-panel',
+          'relative z-10 max-h-[88dvh] w-full max-w-[460px] overflow-y-auto overscroll-contain touch-pan-y rounded-t-[26px] sm:rounded-[26px] bg-[var(--bg-surface)] px-5 pt-3 pb-safe sm:pb-5 shadow-2xl border-t sm:border border-[var(--border-subtle)]',
+          closing
+            ? 'sheet-panel-exit'
+            : isDragging
+              ? ''
+              : 'sheet-panel transition-transform duration-[260ms] ease-in-out',
         ].join(' ')}
       >
         {/* Mobile Grab Handle */}

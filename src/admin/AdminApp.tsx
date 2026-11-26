@@ -34,6 +34,7 @@ import { DashboardOverview } from './components/DashboardOverview';
 import { ProductsManager } from './components/ProductsManager';
 import { CategoriesManager } from './components/CategoriesManager';
 import { BulkPriceManager } from './components/BulkPriceManager';
+import { AdminGuidePage } from './components/AdminGuidePage';
 import { ProductFormModal } from './components/ProductFormModal';
 import { CategoryFormModal } from './components/CategoryFormModal';
 
@@ -376,6 +377,8 @@ export default function AdminApp() {
               onApplyBulkPrices={handleApplyBulkPrices}
             />
           )}
+
+          {activeSection === 'guide' && <AdminGuidePage cafeName={cafeName} />}
         </>
       )}
 

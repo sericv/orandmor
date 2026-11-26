@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { Info } from 'lucide-react';
 import { MENU_DEFAULTS } from '../config/cafeConfig';
 
 interface HeaderProps {
@@ -36,27 +37,14 @@ export const Header = memo(function Header({
           </div>
         </div>
 
-        {/* Minimal Info / Location Action */}
+        {/* Minimal Cafe Info Action */}
         <button
           type="button"
           onClick={onOpenInfo}
-          aria-label="معلومات الكوفي وساعات العمل"
+          aria-label="معلومات المقهى"
           className="pressable flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[var(--bg-surface)] text-[var(--text-primary)] border border-[var(--border-subtle)] shadow-[var(--shadow-card)] text-[16px]"
         >
-          <svg
-            width="19"
-            height="19"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M12 21s-6-5.2-6-10.5a6 6 0 1 1 12 0C18 15.8 12 21 12 21Z" />
-            <circle cx="12" cy="10.5" r="2.2" />
-          </svg>
+          <Info size={19} strokeWidth={1.7} aria-hidden="true" />
         </button>
       </div>
     </header>

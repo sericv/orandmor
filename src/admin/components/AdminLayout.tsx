@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import {
   BadgeDollarSign,
+  BookOpenText,
   ExternalLink,
   FolderKanban,
   LayoutDashboard,
@@ -11,6 +12,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { MENU_DEFAULTS } from '../../config/cafeConfig';
+import { useAnimatedOverlay } from '../hooks/useAnimatedOverlay';
 import type { AdminSection } from '../types';
 
 interface AdminLayoutProps {
@@ -22,11 +24,17 @@ interface AdminLayoutProps {
   children: ReactNode;
 }
 
-const NAV_ITEMS: { id: AdminSection; label: string; icon: LucideIcon }[] = [
-  { id: 'overview', label: 'الرئيسية', icon: LayoutDashboard },
-  { id: 'products', label: 'المنتجات', icon: Package },
-  { id: 'categories', label: 'التصنيفات', icon: FolderKanban },
-  { id: 'prices', label: 'تعديل الأسعار', icon: BadgeDollarSign },
+const NAV_ITEMS: {
+  id: AdminSection;
+  label: string;
+  shortLabel: string;
+  icon: LucideIcon;
+}[] = [
+  { id: 'overview', label: 'الرئيسية', shortLabel: 'الرئيسية', icon: LayoutDashboard },
+  { id: 'products', label: 'المنتجات', shortLabel: 'المنتجات', icon: Package },
+  { id: 'categories', label: 'التصنيفات', shortLabel: 'التصنيفات', icon: FolderKanban },
+  { id: 'prices', label: 'تعديل الأسعار', shortLabel: 'الأسعار', icon: BadgeDollarSign },
+  { id: 'guide', label: 'دليل الاستخدام', shortLabel: 'الدليل', icon: BookOpenText },
 ];
 
 export function AdminLayout({
@@ -38,6 +46,8 @@ export function AdminLayout({
   children,
 }: AdminLayoutProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { rendered: drawerRendered, closing: drawerClosing } =
+    useAnimatedOverlay(drawerOpen);
 
   const currentLabel =
     NAV_ITEMS.find((item) => item.id === activeSection)?.label ?? 'الرئيسية';
@@ -167,9 +177,9 @@ export function AdminLayout({
       </header>
 
       {/* Mobile Slide-Over Drawer */}
-      {drawerOpen && (
+      {drawerRendered && (
         <div
-          className="fixed inset-0 z-50 flex lg:hidden"
+          className="fixed inset-0 z-50 flex lg:hidden overscroll-none"
           role="dialog"
           aria-modal="true"
           aria-label="قائمة لوحة التحكم"
@@ -178,9 +188,18 @@ export function AdminLayout({
             type="button"
             aria-label="إغلاق القائمة"
             onClick={() => setDrawerOpen(false)}
-            className="sheet-backdrop fixed inset-0 bg-[#2B1F19]/40 backdrop-blur-[2px]"
+            onTouchMove={(e) => e.preventDefault()}
+            className={[
+              'fixed inset-0 bg-[#2B1F19]/40 backdrop-blur-[2px] touch-none overscroll-none',
+              drawerClosing ? 'sheet-backdrop-exit' : 'sheet-backdrop',
+            ].join(' ')}
           />
-          <div className="relative z-10 flex h-full w-[272px] max-w-[82vw] flex-col bg-[var(--bg-surface)] shadow-2xl pt-safe pb-safe">
+          <div
+            className={[
+              'relative z-10 flex h-full w-[272px] max-w-[82vw] flex-col bg-[var(--bg-surface)] shadow-2xl pt-safe pb-safe overscroll-contain',
+              drawerClosing ? 'drawer-panel-exit' : 'drawer-panel',
+            ].join(' ')}
+          >
             <button
               type="button"
               onClick={() => setDrawerOpen(false)}
@@ -199,13 +218,13 @@ export function AdminLayout({
         <div className="mx-auto max-w-[980px]">{children}</div>
       </main>
 
-      {/* Mobile Bottom Navigation Bar (4 primary sections for 1-handed use) */}
+      {/* Mobile Bottom Navigation Bar */}
       <nav
         aria-label="التنقل السريع"
         className="fixed right-0 bottom-0 left-0 z-30 border-t border-[var(--border-subtle)] bg-[#FFFDF9]/95 backdrop-blur-xl lg:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
-        <div className="mx-auto grid max-w-[480px] grid-cols-4 px-2 py-1.5">
+        <div className="mx-auto grid max-w-[480px] grid-cols-5 px-1.5 py-1.5">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive = item.id === activeSection;
@@ -215,18 +234,18 @@ export function AdminLayout({
                 type="button"
                 onClick={() => onSelectSection(item.id)}
                 className={[
-                  'pressable flex min-h-[48px] cursor-pointer flex-col items-center justify-center gap-1 rounded-[12px] text-[11px] font-medium',
+                  'pressable flex min-h-[48px] cursor-pointer flex-col items-center justify-center gap-1 rounded-[12px] text-[10.5px] font-medium',
                   isActive
                     ? 'text-[var(--accent)]'
                     : 'text-[var(--text-muted)]',
                 ].join(' ')}
               >
                 <Icon
-                  size={19}
+                  size={18}
                   strokeWidth={isActive ? 2 : 1.65}
                   aria-hidden="true"
                 />
-                <span className="truncate">{item.label}</span>
+                <span className="truncate">{item.shortLabel}</span>
               </button>
             );
           })}
