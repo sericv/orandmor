@@ -1,0 +1,246 @@
+@import "tailwindcss";
+
+:root {
+  /* Palette — Editorial Minimal Café (Easy to customize per brand) */
+  --bg-canvas: #F7F3ED;
+  --bg-surface: #FFFDF9;
+  --bg-subtle: #EFE9DF;
+  --bg-featured: #2B1F19;
+  --bg-featured-soft: #3B2B23;
+
+  --text-primary: #2B1F19;
+  --text-secondary: #6A584E;
+  --text-muted: #8A786D;
+  --text-on-dark: #FDF9F3;
+  --text-on-dark-muted: #CBBBA9;
+
+  --accent: #8B5A3C;
+  --accent-active: #73472C;
+  --accent-soft: rgba(139, 90, 60, 0.1);
+  --accent-warm: #E5C19B;
+
+  --border-subtle: rgba(43, 31, 25, 0.075);
+  --border-strong: rgba(43, 31, 25, 0.14);
+
+  --shadow-card: 0 2px 10px -2px rgba(43, 31, 25, 0.045),
+    0 1px 2px rgba(43, 31, 25, 0.025);
+  --shadow-chip-active: 0 4px 12px -3px rgba(139, 90, 60, 0.3);
+  --shadow-featured: 0 10px 28px -10px rgba(43, 31, 25, 0.24);
+
+  /* Fast, crisp Motion Language */
+  --motion-fast: 140ms;
+  --motion-duration: 220ms;
+  --ease-motion: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@layer base {
+  html {
+    font-family: 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont,
+      'Segoe UI', sans-serif;
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    overflow-x: clip;
+    max-width: 100%;
+    touch-action: manipulation;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    overflow-x: clip;
+    max-width: 100%;
+    overscroll-behavior-y: contain;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button,
+  a {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button:focus-visible,
+  a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+.font-latin {
+  font-family: 'Plus Jakarta Sans', 'IBM Plex Sans Arabic', sans-serif;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hide horizontal scrollbar on touch category rail */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Safe area helpers */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.pb-safe {
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Subtle fixed paper-grain texture (GPU-safe, non-scrolling) */
+.paper-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0.022;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Unified interactive press physics */
+.pressable {
+  transition: transform var(--motion-fast) var(--ease-motion),
+    background-color 180ms var(--ease-motion),
+    color 180ms var(--ease-motion),
+    border-color 180ms var(--ease-motion);
+}
+.pressable:active {
+  transform: scale(0.97);
+}
+
+/* Subtle product card hover only on fine pointer devices */
+@media (hover: hover) and (pointer: fine) {
+  .product-card-media {
+    transition: transform 280ms var(--ease-motion);
+  }
+  .product-card:hover .product-card-media {
+    transform: scale(1.03);
+  }
+  .chip-inactive:hover {
+    background-color: var(--bg-subtle);
+    color: var(--text-primary);
+  }
+}
+
+/* Sliding active category pill indicator */
+.category-active-pill {
+  transition: transform var(--motion-duration) var(--ease-motion),
+    width var(--motion-duration) var(--ease-motion);
+  will-change: transform, width;
+}
+
+/* Lightweight, instant-feeling fade for category/banner switches (no delay) */
+@keyframes contentFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.content-fade-in {
+  animation: contentFadeIn 180ms var(--ease-motion) both;
+}
+
+/* Smooth Product Details enter & exit (GPU-only: transform + opacity) */
+@keyframes detailsEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.details-overlay-enter {
+  animation: detailsEnter 240ms var(--ease-motion) both;
+}
+
+.details-overlay-exit {
+  opacity: 0;
+  transform: translateY(12px) scale(0.99);
+  transition: opacity 200ms var(--ease-motion),
+    transform 200ms var(--ease-motion);
+  pointer-events: none;
+}
+
+/* Bottom sheet motion */
+@keyframes backdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sheetSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.sheet-backdrop {
+  animation: backdropIn 180ms ease-out both;
+}
+
+.sheet-backdrop-exit {
+  opacity: 0;
+  transition: opacity 180ms ease-out;
+  pointer-events: none;
+}
+
+.sheet-panel {
+  animation: sheetSlideUp 260ms var(--ease-sheet) both;
+}
+
+.sheet-panel-exit {
+  opacity: 0;
+  transform: translateY(20px) scale(0.98);
+  transition: opacity 180ms var(--ease-sheet), transform 180ms var(--ease-sheet);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pressable,
+  .product-card-media,
+  .category-active-pill {
+    transition: none;
+  }
+  .pressable:active {
+    transform: none;
+  }
+  .content-fade-in,
+  .details-overlay-enter,
+  .sheet-backdrop,
+  .sheet-panel {
+    animation: none;
+  }
+  .details-overlay-exit,
+  .sheet-backdrop-exit,
+  .sheet-panel-exit {
+    transition: none;
+    transform: none;
+  }
+}

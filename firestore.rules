@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Public read-only access to cafe profile
+    match /cafes/{cafeId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Menu Categories: public read; writes require Firebase Authentication
+    match /menuCategories/{categoryId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn()
+                    && request.resource.data.cafeId == resource.data.cafeId;
+      allow delete: if isSignedIn();
+    }
+
+    // Menu Products: public read; writes require Firebase Authentication
+    match /menuProducts/{productId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn()
+                    && request.resource.data.cafeId == resource.data.cafeId;
+      allow delete: if isSignedIn();
+    }
+  }
+}
